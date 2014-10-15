@@ -13,24 +13,23 @@ Image = padarray(Image,[10,10,10]);
 if(ndims(Image)==3)
     
     iOld = double(Image);
-    clear Image;
     
     Dk = 0.1;
-    omega = 50;
-    epsilon = 0.0001;
-    dt = 0.02;
-    s = 10;
+    omega = 100;
+    epsilon = 0.000001;
+    dt = 0.01;
+    s = 40;
     sigs = sigmas(1:3);
     
 %     options.FrangiScaleRange=[sigs sigs];
 %     options.FrangiScaleRatio = 2;
 %     imagesc(iOld);
    
-    Vness1 = FrangiFilter3D(iOld,options);
+    [Vness1, whatScale,V1x,V1y,V1z] = FrangiFilter3D(iOld,options);
     
     for iT = 1:50
        
-        [Vness, whatScale,V1x,V1y,V1z] = FrangiFilter3DRuss(iOld,options);
+      [Vness, whatScale,V1x,V1y,V1z] = FrangiFilter3DRuss(iOld,options);
         
         V2x = zeros(size(V1x));
         V2y = zeros(size(V1x));
@@ -73,8 +72,8 @@ if(ndims(Image)==3)
         
         
         
-        m1 = 1 + (omega - 1)*Vness.^(1/s).*(iOld./max(iOld(:)));
-        m2 = 1 + (epsilon - 1)*Vness.^(1/s);
+        m1 = 1 + (omega - 1)*Vness1.^(1/s);
+        m2 = 1 + (epsilon - 1)*Vness1.^(1/s);
         m3 =  m2;
         
         
@@ -93,20 +92,18 @@ if(ndims(Image)==3)
         
         
         [gX,gY,gZ] = gradient(iOld);
-        Step = dt.*divergence(K11.*gX + K12.*gY + K13.*gZ,K21.*gX + K22.*gY + K23.*gZ,K31.*gX + K32.*gY + K33.*gZ);
+%         Step = dt.*divergence(K11.*gX + K12.*gY + K13.*gZ,K21.*gX + K22.*gY + K23.*gZ,K31.*gX + K32.*gY + K33.*gZ);
+        Step = dt.*divergence(K11.*gX + K21.*gY + K31.*gZ,K12.*gX + K22.*gY + K32.*gZ,K13.*gX + K23.*gY + K33.*gZ);
+
         iNew = iOld + Step;
-        
         iOld = iNew;
         
         figure(1)
         subplot(221)
-        imagesc(squeeze(Vness(:,:,50)));
-        set(gca,'YDir','normal')
-        subplot(222)
         imagesc(squeeze(Vness1(:,:,50)));
         set(gca,'YDir','normal')
         subplot(223);
-        imagesc(squeeze((Vness(:,:,50)>0.1).*V1z(:,:,50)./norm1(:,:,50)));
+        imagesc(squeeze(iNew(:,:,50)));
         set(gca,'YDir','normal')
         subplot(224);
         imagesc(squeeze(Image(:,:,50)));
